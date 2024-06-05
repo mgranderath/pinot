@@ -53,8 +53,11 @@ import org.apache.helix.model.Message;
 import org.apache.helix.store.zk.ZkHelixPropertyStore;
 import org.apache.helix.task.TaskDriver;
 import org.apache.helix.zookeeper.datamodel.ZNRecord;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.pinot.common.Utils;
 import org.apache.pinot.common.config.TlsConfig;
@@ -454,7 +457,10 @@ public abstract class BaseControllerStarter implements ServiceStartable {
 
     _sqlQueryExecutor = new SqlQueryExecutor(_config.generateVipUrl());
 
-    _connectionManager = new PoolingHttpClientConnectionManager();
+    SSLConnectionSocketFactory connectionSocketFactory = new SSLConnectionSocketFactory(TlsUtils.getSslContext());
+    _connectionManager = new PoolingHttpClientConnectionManager(
+        RegistryBuilder.<ConnectionSocketFactory>create().register(CommonConstants.HTTPS_PROTOCOL, connectionSocketFactory).build()
+    );
     _connectionManager.setDefaultSocketConfig(
         SocketConfig.custom().setSoTimeout(_config.getServerAdminRequestTimeoutSeconds() * 1000).build());
 
